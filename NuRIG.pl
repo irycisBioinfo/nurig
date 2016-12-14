@@ -65,13 +65,13 @@ $R->set('palette',$palette);
 $R->run_from_file("$PATH/lib/NuRIG.R");
 $R-> stop();
 
-system("java -jar $PATH/bin/cgview/cgview.jar -i out.xml -o $outFile -f $format -W $W -H $H");
+system("java -jar $PATH/bin/cgview/cgview.jar -i out.xml -o $outFile.$format -f $format -W $W -H $H");
 
 
 
 sub usage {
 	print "Usage:\n\n";
-	print "Nucmer Image Ring Generator (NuRIG)\n";
+	print "Nucmer Image Ring Generator (NuRIG) BETA-Version\n";
 	print "writen by: Val F. Lanza (valfernandez.vf\@gmail.com)\n\n";
 	print "NuRIG.pl --ref reference.fasta --table list.txt --out image.svg --palette rainbow --W 1000 --H 1000 --format SVG\n";
 
