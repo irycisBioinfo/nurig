@@ -7,6 +7,14 @@ library(XML)
 #ref = "b2.ref"
 #outFile = "out.xml"
 
+if (ncol(lista) == 2)
+{
+  colnames(lista) = c("file", "names")
+} else{
+  colnames(lista) = c("file")
+  lista$names <- lista$file
+}
+
 
 
 j = 1
@@ -51,6 +59,8 @@ for (i in lista$file)
   j = j + 1
 }
 
+finalTable = full_join(finalTable, lista, by = "file")
+
 finalTable = finalTable %>% group_by(rID) %>% summarise(ln = first(lenref)) %>% mutate(prueba = cumsum(ln)) %>% mutate(position = prueba -
                                                                                                                          ln) %>% select(rID, position) %>% full_join(finalTable, .)
 finalTable = finalTable %>% group_by(slot) %>% mutate(orden = sum(lenAlig *
@@ -63,7 +73,11 @@ size = finalTable %>% group_by(rID) %>% summarise(tl = first(lenref)) %>% summar
 xml = xmlTree()
 xml$addTag(
   "cgview",
-  attrs = c(backboneRadius = "160", sequenceLength = as.integer(size[1])),
+  attrs = c(
+    backboneRadius = "160",
+    sequenceLength = as.integer(size[1]),
+    title = ref
+  ),
   close = FALSE
 )
 
@@ -71,12 +85,12 @@ xml$addTag(
 
 j = 1
 
-if(palette == 'rainbow')
+if (palette == 'rainbow')
 {
   colores = rainbow(max(finalTable$slot))
-}else if (palette == 'topo'){
+} else if (palette == 'topo') {
   colores = topo.colores(max(finalTable$slot))
-}else if (palette == 'terrain'){
+} else if (palette == 'terrain') {
   colores = terrain.colors(max(finalTable$slot))
 }
 
@@ -112,14 +126,18 @@ for (tab in 1:length(tmp))
 }
 xml$closeTag()
 
+####Draw Legend
+
 xml$addTag("legend",
            attrs = c(position = "upper-right"),
            close = FALSE)
 j = 1
 
-tmp2 = finalTable %>% group_by(file, orden) %>% summarise(slot = first(slot)) %>% arrange(desc(orden))
+tmp2 = finalTable %>% group_by(file, name, orden) %>% summarise(slot = first(slot)) %>% arrange(desc(orden))
 
-for (i in tmp2$file)
+
+
+for (i in tmp2$name)
 {
   clr = paste("rgb(", paste(col2rgb(colores[j]), collapse = ","), ")", collapse = "")
   xml$addTag(
@@ -135,7 +153,7 @@ for (i in tmp2$file)
 }
 xml$closeTag()
 
-##### Dibujar features (contigs)
+##### Draw contigs
 
 contigs = finalTable %>% group_by(rID) %>% summarise(position = first(position) +
                                                        1)
@@ -178,6 +196,49 @@ if (nrow(contigs) > 1)
   xml$closeTag()
 }
 
-
+### Draw Annotation
+if (exists(annot))
+{
+  colnames(annot) = c("qID",
+                      "soft",
+                      "type",
+                      "start",
+                      "end",
+                      "v6",
+                      "strand",
+                      "v8",
+                      "label")
+  finalAnnot = finalTable %>% group_by(qID) %>% summarise(position = first(position)) %>% full_join(., annot) %>%  mutate(start = start +
+                                                                                                                            position, end = end + position)
+  
+  xml$addTag("featureSlot",
+             attrs = c(strand = "direct"),
+             close = FALSE)
+  xml$addTag("feature",
+             attrs = c(decoration = "clockwise-arrow"),
+             close = FALSE)
+  cl = rep(c("red", "blue"), times = (nrow(finalAnnot) / 2) + 1)
+  for (i in 1:(nrow(finalAnnot)))
+  {
+    if (finalAnnot$strand[i] == "+")
+    {
+      orientation = "clockwise-arrow"
+    } else{
+      orientation = "counterclockwise-arrow"
+    }
+    xml$addTag(
+      "featureRange",
+      attrs = c(
+        start = finalAnnot$start[i],
+        stop = finalAnnot$end[i],
+        color = cl[i],
+        label = finalAnnot$label,
+        showLabel = "FALSE"
+      ),
+      close = TRUE
+    )
+  }
+  xml$closeTag()
+  xml$closeTag()
+}
 saveXML(xml$value(), file = "out.xml")
-

@@ -59,7 +59,6 @@ $R->start();
 $R->set('ref',$ref);
 $cmdLista = "lista = as.data.frame(read.table('$table'))";
 $R->run($cmdLista);
-$R->run("colnames(lista) = c('file')");
 $R->set('palette',$palette);
 
 $R->run_from_file("$PATH/lib/NuRIG.R");
