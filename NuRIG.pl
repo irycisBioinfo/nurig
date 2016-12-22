@@ -20,8 +20,8 @@ my @Options;
 @Options = (
 		
 		{OPT=>"ref=s",	VAR=>\$ref,	DESC=>"Reference Genome"},
-		{OPT=>"out=s",	VAR=>\$outFile,	DEFAULT => 'out', DESC=>"Network filename"},
-		{OPT=>"table=s",	VAR=>\$table, DESC=>"Table with genome information"},
+		{OPT=>"out=s",	VAR=>\$outFile,	DEFAULT => 'out', DESC=>"Image filename"},
+		{OPT=>"list=s",	VAR=>\$table, DESC=>"list with query genome files"},
 		{OPT=>"palette=s",	VAR=>\$palette,	DEFAULT => 'rainbow', DESC=>"Color palette for figure (rainbow, topo, terrain)"},
 		{OPT=>"W=i",	VAR=>\$W,	DEFAULT => '1000', DESC=>"Image weight"},
 		{OPT=>"H=i",	VAR=>\$H,	DEFAULT => '1000', DESC=>"Image height"},
@@ -57,7 +57,7 @@ $PATH =~ s/\/NuRIG.pl//;
 $R = Statistics::R->new(shared => 1);
 $R->start();
 $R->set('ref',$ref);
-$cmdLista = "lista = as.data.frame(read.table('$table'))";
+$cmdLista = "lista = as.data.frame(read.table('$table', sep ='\t'))";
 $R->run($cmdLista);
 $R->set('palette',$palette);
 

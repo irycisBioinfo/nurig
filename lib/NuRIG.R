@@ -242,3 +242,5 @@ if (exists(annot))
   xml$closeTag()
 }
 saveXML(xml$value(), file = "out.xml")
+write.table(finalTable,file = "FinalTable.tsv",sep = '\t', row.names = FALSE)
+
