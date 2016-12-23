@@ -15,13 +15,16 @@ my $format;
 my $PATH;
 my $R;
 my $cmdLista;
+my $annot = undef;
 my @Options;
+
 
 @Options = (
 		
 		{OPT=>"ref=s",	VAR=>\$ref,	DESC=>"Reference Genome"},
-		{OPT=>"out=s",	VAR=>\$outFile,	DEFAULT => 'out', DESC=>"Image filename"},
+		{OPT=>"out=s",	VAR=>\$outFile,	DEFAULT => 'out', DESC=>"Image- filename"},
 		{OPT=>"list=s",	VAR=>\$table, DESC=>"list with query genome files"},
+		{OPT=>"annot=s", VAR=>\$annot, DESC=>"Annotation file"},
 		{OPT=>"palette=s",	VAR=>\$palette,	DEFAULT => 'rainbow', DESC=>"Color palette for figure (rainbow, topo, terrain)"},
 		{OPT=>"W=i",	VAR=>\$W,	DEFAULT => '1000', DESC=>"Image weight"},
 		{OPT=>"H=i",	VAR=>\$H,	DEFAULT => '1000', DESC=>"Image height"},
@@ -57,8 +60,12 @@ $PATH =~ s/\/NuRIG.pl//;
 $R = Statistics::R->new(shared => 1);
 $R->start();
 $R->set('ref',$ref);
-$cmdLista = "lista = as.data.frame(read.table('$table', sep ='\t'))";
-$R->run($cmdLista);
+if($annot)
+{
+	$R->set('annotFile',$annot);
+}
+$R->set('listFile',$table);
+
 $R->set('palette',$palette);
 
 $R->run_from_file("$PATH/lib/NuRIG.R");
@@ -72,7 +79,7 @@ sub usage {
 	print "Usage:\n\n";
 	print "Nucmer Image Ring Generator (NuRIG) BETA-Version\n";
 	print "writen by: Val F. Lanza (valfernandez.vf\@gmail.com)\n\n";
-	print "NuRIG.pl --ref reference.fasta --table list.txt --out image.svg --palette rainbow --W 1000 --H 1000 --format SVG\n";
+	print "NuRIG.pl --ref reference.fasta --list list.txt --annot AnnotationFile.tab --out image.svg --palette rainbow --W 1000 --H 1000 --format SVG\n";
 
 	print "\nParameters:\n\n";
 	foreach (@Options) {

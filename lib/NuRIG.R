@@ -2,10 +2,19 @@ library(dplyr)
 library(tidyr)
 library(XML)
 
-#lista = read.table("lista.txt")
+# listFile = "lista.txt"
+# annotFile = "annot.tab"
+# ref = "GCF_000391745.1_Ente_faec_109_A1_V1_genomic.fna"
+# outFile = "out.xml"
+
+lista = read.table(listFile, sep = "\t")
 #colnames(lista) = c("file")
-#ref = "b2.ref"
-#outFile = "out.xml"
+
+if(exists("annotFile"))
+{
+  annot = read.table(annotFile, sep = "\t", stringsAsFactors = FALSE)
+}
+palette = 'rainbow'
 
 if (ncol(lista) == 2)
 {
@@ -76,7 +85,8 @@ xml$addTag(
   attrs = c(
     backboneRadius = "160",
     sequenceLength = as.integer(size[1]),
-    title = ref
+    title = ref,
+    labelPlacementQuality = "best"
   ),
   close = FALSE
 )
@@ -133,11 +143,11 @@ xml$addTag("legend",
            close = FALSE)
 j = 1
 
-tmp2 = finalTable %>% group_by(file, name, orden) %>% summarise(slot = first(slot)) %>% arrange(desc(orden))
+tmp2 = finalTable %>% group_by(file, names, orden) %>% summarise(slot = first(slot)) %>% arrange(desc(orden))
 
 
 
-for (i in tmp2$name)
+for (i in tmp2$names)
 {
   clr = paste("rgb(", paste(col2rgb(colores[j]), collapse = ","), ")", collapse = "")
   xml$addTag(
@@ -157,6 +167,8 @@ xml$closeTag()
 
 contigs = finalTable %>% group_by(rID) %>% summarise(position = first(position) +
                                                        1)
+lblBoolean = !(exists("annot"))
+
 if (nrow(contigs) > 1)
 {
   xml$addTag("featureSlot",
@@ -165,7 +177,7 @@ if (nrow(contigs) > 1)
   xml$addTag("feature",
              attrs = c(decoration = "clockwise-arrow"),
              close = FALSE)
-  cl = rep(c("red", "blue"), times = (nrow(contigs) / 2) + 1)
+  cl = rep(c("black", "grey"), times = (nrow(contigs) / 2) + 1)
   for (i in 1:(nrow(contigs) - 1))
   {
     xml$addTag(
@@ -174,8 +186,9 @@ if (nrow(contigs) > 1)
         start = contigs$position[i],
         stop = contigs$position[i + 1],
         mouseover = contigs$rID[i],
+        label = contigs$rID[i],
         color = cl[i],
-        showLabel = "FALSE"
+        showLabel = lblBoolean
       ),
       close = TRUE
     )
@@ -187,8 +200,9 @@ if (nrow(contigs) > 1)
       ,
       stop = as.integer(size[1]),
       mouseover = contigs$rID[nrow(contigs)],
+      label = contigs$rID[nrow(contigs)],
       color = cl[i + 1],
-      showLabel = "FALSE"
+      showLabel = lblBoolean
     ),
     close = TRUE
   )
@@ -197,18 +211,14 @@ if (nrow(contigs) > 1)
 }
 
 ### Draw Annotation
-if (exists(annot))
+#if (exists(annot))
+if(exists("annot"))
 {
-  colnames(annot) = c("qID",
-                      "soft",
-                      "type",
-                      "start",
-                      "end",
-                      "v6",
-                      "strand",
-                      "v8",
-                      "label")
-  finalAnnot = finalTable %>% group_by(qID) %>% summarise(position = first(position)) %>% full_join(., annot) %>%  mutate(start = start +
+  if(ncol(annot) <6){
+    annot$color = "black"
+  }
+  colnames(annot) = c("qID","start","end","strand","label","color")
+  finalAnnot = finalTable %>% group_by(qID) %>% summarise(position = first(position)) %>% right_join(., annot) %>%  mutate(start = start +
                                                                                                                             position, end = end + position)
   
   xml$addTag("featureSlot",
@@ -218,22 +228,40 @@ if (exists(annot))
              attrs = c(decoration = "clockwise-arrow"),
              close = FALSE)
   cl = rep(c("red", "blue"), times = (nrow(finalAnnot) / 2) + 1)
-  for (i in 1:(nrow(finalAnnot)))
+  tmp = finalAnnot %>% filter(strand == "+")
+  for (i in 1:(nrow(tmp)))
   {
-    if (finalAnnot$strand[i] == "+")
-    {
-      orientation = "clockwise-arrow"
-    } else{
-      orientation = "counterclockwise-arrow"
-    }
     xml$addTag(
       "featureRange",
       attrs = c(
-        start = finalAnnot$start[i],
-        stop = finalAnnot$end[i],
-        color = cl[i],
-        label = finalAnnot$label,
-        showLabel = "FALSE"
+        start = tmp$start[i],
+        stop = tmp$end[i],
+        color = tmp$color[i],
+        label = tmp$label,
+        showLabel = "TRUE"
+      ),
+      close = TRUE
+    )
+  }
+  xml$closeTag()
+  xml$closeTag()
+  xml$addTag("featureSlot",
+             attrs = c(strand = "direct"),
+             close = FALSE)
+  xml$addTag("feature",
+             attrs = c(decoration = "counterclockwise-arrow"),
+             close = FALSE)
+  tmp = finalAnnot %>% filter(strand == "-")
+  for (i in 1:(nrow(tmp)))
+  {
+    xml$addTag(
+      "featureRange",
+      attrs = c(
+        start = tmp$start[i],
+        stop = tmp$end[i],
+        color = tmp$color[i],
+        label = tmp$label[i],
+        showLabel = "TRUE"
       ),
       close = TRUE
     )
@@ -242,5 +270,5 @@ if (exists(annot))
   xml$closeTag()
 }
 saveXML(xml$value(), file = "out.xml")
-write.table(finalTable,file = "FinalTable.tsv",sep = '\t', row.names = FALSE)
+#write.table(finalTable,file = "FinalTable.tsv",sep = '\t', row.names = FALSE)
 
