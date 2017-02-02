@@ -15,15 +15,17 @@ library(colourpicker)
 source("nurigFunctions.R")
 # Define UI for application
 
-finaliza <- function(dir) {
-  unlink(dir, recursive = TRUE, force = TRUE)
-}
+# finaliza <- function(dir) {
+#   unlink(dir, recursive = TRUE, force = TRUE)
+# }
 
 ui <- fluidPage(
-  titlePanel(windowTitle = "NuRIG: Nucmer Ring Image Generator",{imageOutput("Logo", width = 30, height = 20)}),
+ 
+  headerPanel(windowTitle = "NuRIG: Nucmer Ring Image Generator",img(src='Logo.png', align = "left", width = "20%", height = "20%")),
   fluidRow(
     column(
       width = 4 ,
+      
       wellPanel(
         wellPanel(
           h3("Input Data"),
@@ -51,7 +53,8 @@ ui <- fluidPage(
     column(
       width = 8,tabsetPanel(
           tabPanel("Image",conditionalPanel(condition = "!is.null(output.figure)",imageOutput("figure", width = "auto"))),
-          tabPanel("Annotation",
+          tabPanel("Annotation Strains"),
+          tabPanel("Annotation Features",
                    wellPanel(
                       fileInput(inputId = "annotation",
                         multiple = FALSE,
@@ -70,17 +73,17 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   datos <-
     reactiveValues(tmpPath = tempfile(),
-                   currentPath = getwd(),
+                   currentPath = gsub("web","",getwd()),
                    condicion = 0,
                    separador = " ")
   
-  output$Logo = renderImage({
-    return(list(
-      src = "./www/Logo.png",
-      width = 100,
-      height = 100
-    ))
-  })
+  # output$Logo = renderImage({
+  #   return(list(
+  #     src = "www/Logo.png",
+  #     width = 100,
+  #     height = 100
+  #   ))
+  # })
   
   
   
@@ -110,7 +113,7 @@ server <- function(input, output, session) {
     req(input$query)
     
     withProgress(message = "Performing Nucmer", {
-      datos$FinalTable <<- nurigCalc(reference = input$reference,
+      datos$FinalTable <- nurigCalc(reference = input$reference,
                                      query = as.data.frame(input$query))
     })
     
@@ -158,14 +161,15 @@ server <- function(input, output, session) {
         finalTable = datos$FinalTable,
         reference = input$reference,
         pal = input$palette,
-        annotation =datos$view,
+        annotation = datos$view,
         width = input$width,
         height = input$height,
         binPath = datos$currentPath
       )
+      write.table(datos$view,"datosView.tmp", row.names = FALSE)
     })
     
-   
+    write.table(datos$view,"datosView.tmp", row.names = FALSE)
     output$figure = renderImage({
       return(list(
         src = "fig.svg",
@@ -221,7 +225,7 @@ server <- function(input, output, session) {
         selectInput(inputId = "selectLabelField", label = "Label Field", choices = c(colnames(datos$table)[8:length(colnames(datos$table))-1]), multiple = TRUE),
         selectInput(inputId = "separador", label = "Field Separator",choices = c("Space","Tab",";",":","|")),
         checkboxInput(inputId = "removeEmpty", label = "Remove Empty cells?"),
-        colourInput(inputId = "colorSelector", label ="Set Color", value = "black")
+        colourInput(inputId = "colorSelector", label ="Set Color", value = "black", palette = "limited", returnName = TRUE)
         
       )
     })
@@ -255,13 +259,20 @@ server <- function(input, output, session) {
     
     
     output$annotationTable <- renderDataTable(datos$view, options = list(searching = TRUE))
-    renderPrint({output$nAnnot = nrow(datos$view)})  
+    # renderPrint({output$nAnnot = nrow(datos$view)})  
   })
   
-  # observeEvent(input$tableId_cell_clicked,{
-  #   
-  #   
-  # })
+  
+  
+   observeEvent(input$colorSelector,{
+     for(i in input$annotationTable_rows_selected)
+     {
+       
+       datos$view$color[i] =input$colorSelector
+     }
+    
+     output$annotationTable <- renderDataTable(datos$view, options = list(searching = TRUE))
+   })
   
   observeEvent(input$separador,{###c("Space","Tab",";",":","|")
     if(input$separador == "Space")
@@ -285,10 +296,11 @@ server <- function(input, output, session) {
  
   
  
-  #observeEvent(input$applyFilters,{output$annotationTable <- renderDataTable(datos$view)})
+ 
   
   
-  #session$onSessionEnded(finaliza(datos$tmpPath))
+  # session$onSessionEnded(function() {
+  #   unlink(datos$tmpPath, recursive = TRUE, force = TRUE)})
 }
 
 # Run the application

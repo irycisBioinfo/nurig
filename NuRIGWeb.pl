@@ -8,7 +8,7 @@ $PATH =~ s/\/NuRIGWeb.pl//;
 
 $R = Statistics::R->new(shared => 1);
 $R->send("setwd('$PATH')");
-$R->send("shiny::runApp('lib/app.r', launch.browser = TRUE)");
+$R->send("shiny::runApp('web/main.r', launch.browser = TRUE)");
 $R-> stop();
 
 

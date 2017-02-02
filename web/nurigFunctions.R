@@ -31,7 +31,7 @@ nurigCalc <- function(reference, query){
     system("delta-filter -q out.delta > out.f.delta ")
     system("show-coords -l -L 200 -q -B out.f.delta > out.coords")
     
-    tmpTable = read.table("out.coords", sep = "\t")
+    tmpTable = read.table("out.coords", sep = "\t", stringsAsFactors = FALSE)
     colnames(tmpTable) = c(
       "qID",
       "date",
@@ -72,7 +72,7 @@ nurigCalc <- function(reference, query){
   finalTable = finalTable %>% group_by(rID) %>% summarise(ln = first(lenref)) %>% mutate(prueba = cumsum(ln)) %>% mutate(position = prueba -
                                                                                                                            ln) %>% select(rID, position) %>% full_join(finalTable, .)
   finalTable = finalTable %>% group_by(slot) %>% mutate(orden = sum(lenAlig *
-                                                                      peridentity / 100)) %>% arrange(desc(orden))
+                                                                      peridentity / 100)) %>% arrange(orden)
   
   return(finalTable)
 }
@@ -198,9 +198,9 @@ nurigRender <- function(finalTable,reference,pal, formatImage, height, width, an
   
   ##### Draw contigs
   
-  contigs = finalTable %>% group_by(rID) %>% summarise(position = first(position) +
-                                                         1)
-  lblBoolean = (!is.null(annot) && nrow(annot)>0 && ncol(annot)< 9)
+  contigs = finalTable %>% group_by(rID) %>% summarise(position = first(position) +1)
+                                                  
+  lblBoolean = (!is.null(annot) && nrow(annot)>0 && ncol(annot)<= 9)
   
   if (nrow(contigs) > 1)
   {
@@ -245,7 +245,7 @@ nurigRender <- function(finalTable,reference,pal, formatImage, height, width, an
   
   ### Draw Annotation
   
-  if(!is.null(annot) && nrow(annot)>0 && ncol(annot)< 9)
+  if(!is.null(annot) && nrow(annot)>0 && ncol(annot) <= 9)
   {
     
     annot = annot %>% rename(rID = seqname)
@@ -270,7 +270,7 @@ nurigRender <- function(finalTable,reference,pal, formatImage, height, width, an
         attrs = c(
           start = tmp$start[i],
           stop = tmp$end[i],
-          color = tmp$color[i],
+          color = paste("rgb(", paste(col2rgb(tmp$color[i],), collapse = ","), ")", collapse = ""),
           label = tmp$label[i],
           showLabel = as.character(!(is.na(tmp$label[i])|| tmp$label[i]==""))
         ),
@@ -293,7 +293,7 @@ nurigRender <- function(finalTable,reference,pal, formatImage, height, width, an
         attrs = c(
           start = tmp$start[i],
           stop = tmp$end[i],
-          color = tmp$color[i],
+          color = paste("rgb(", paste(col2rgb(tmp$color[i],), collapse = ","), ")", collapse = ""),
           label = tmp$label[i],
           showLabel = as.character(!(is.na(tmp$label[i])|| tmp$label[i]==""))
         ),
@@ -303,7 +303,7 @@ nurigRender <- function(finalTable,reference,pal, formatImage, height, width, an
     xml$closeTag()
     xml$closeTag()
   }
-  #binPath = gsub("[[:space:]]","",binPath)
+#binPath = gsub("/www","",binPath)
   saveXML(xml$value(), file = "out.xml")
   system(paste("java -jar ",binPath,"/bin/cgview/cgview.jar -i out.xml -o fig.svg -f svg -W ",width," -H ",height,collapse ="", sep =""))
   #write.table(finalTable,file = "FinalTable.tsv",sep = '\t', row.names = FALSE)
