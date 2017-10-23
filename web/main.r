@@ -116,7 +116,7 @@ server <- function(input, output, session) {
       datos$FinalTable <- nurigCalc(reference = input$reference,
                                      query = as.data.frame(input$query))
     })
-    
+    write.table(datos$FinalTable,"FinalTable.tmp", row.names = FALSE)
     output$imagePanel <- renderUI({
       wellPanel(
         h3("Figure Options"),

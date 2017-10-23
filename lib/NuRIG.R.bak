@@ -2,12 +2,10 @@ library(dplyr)
 library(tidyr)
 library(XML)
 
-#setwd("~/ST117/Paper/data/ST117/")
- #listFile = "list"
- #annotFile = "annot.tab"
- #ref = "CP018065.1EnterococcusfaeciumstrainE1,completegenome.fasta"
- #ref = "GCA_001562905.1_ASM156290v1_genomic.fna"
- #outFile = "out.xml"
+# listFile = "lista.txt"
+# annotFile = "annot.tab"
+# ref = "GCF_000391745.1_Ente_faec_109_A1_V1_genomic.fna"
+# outFile = "out.xml"
 
 lista = read.table(listFile, sep = "\t")
 #colnames(lista) = c("file")
@@ -26,7 +24,7 @@ if (ncol(lista) == 2)
   lista$names <- lista$file
 }
 
-print("Comparissons");
+
 
 j = 1
 for (i in lista$file)
@@ -72,27 +70,15 @@ for (i in lista$file)
 
 finalTable = full_join(finalTable, lista, by = "file")
 
-theTable = finalTable
+finalTable = finalTable %>% group_by(rID) %>% summarise(ln = first(lenref)) %>% mutate(prueba = cumsum(ln)) %>% mutate(position = prueba -
+                                                                                                                         ln) %>% select(rID, position) %>% full_join(finalTable, .)
+finalTable = finalTable %>% group_by(slot) %>% mutate(orden = sum(lenAlig *
+                                                                    peridentity / 100)) %>% arrange(desc(orden))
 
 
 
-
-
-
-finalTable = theTable
-
-finalTable = finalTable %>% group_by(rID) %>% summarise(ln = first(lenref)) %>% mutate(prueba = cumsum(ln)) %>% mutate(position = prueba -ln) %>% select(rID, position) %>% full_join(finalTable, .)
-
-legend = finalTable %>% group_by(file,names) %>% summarise(score = sum(peridentity * lenAlig /100)) %>% arrange(desc(score))
-legend$order = seq(1:length(legend$file))
-
-finalTable = finalTable %>% full_join(legend)
-
+tmp = finalTable %>%  split(.$slot)
 size = finalTable %>% group_by(rID) %>% summarise(tl = first(lenref)) %>% summarise(S = sum(tl))
-
-
-
-
 xml = xmlTree()
 xml$addTag(
   "cgview",
@@ -118,28 +104,25 @@ if (palette == 'rainbow')
   colores = terrain.colors(max(finalTable$slot))
 }
 
-for (tab in 1:max(legend$order))
+for (tab in 1:length(tmp))
 {
-  tmp = finalTable %>% filter(order == tab)
-  
   xml$addTag("featureSlot",
              attrs = c(strand = "direct"),
              close = FALSE)
   clr = paste("rgb(", paste(col2rgb(colores[j]), collapse = ","), ")", collapse = "")
   j = j + 1
-  
   xml$addTag("feature",
              attrs = c(color = clr, decoration = "arc"),
              close = FALSE)
-  for (r in 1:nrow(tmp))
+  for (r in 1:nrow(tmp[[tab]]))
   {
     #xml$addTag("feature", close = FALSE)
     xml$addTag(
       "featureRange",
       attrs = c(
-        start = tmp$startreference[r] + tmp$position[r],
-        stop = tmp$endreference[r] + tmp$position[r],
-        opacity = tmp$peridentity[r] / 100
+        start = tmp[[tab]]$startreference[r] + tmp[[tab]]$position[r],
+        stop = tmp[[tab]]$endreference[r] + tmp[[tab]]$position[r],
+        opacity = tmp[[tab]]$peridentity[r] / 100
       ),
       close = FALSE
     )
@@ -160,8 +143,11 @@ xml$addTag("legend",
            close = FALSE)
 j = 1
 
+tmp2 = finalTable %>% group_by(file, names, orden) %>% summarise(slot = first(slot)) %>% arrange(desc(orden))
 
-for (i in legend$names)
+
+
+for (i in tmp2$names)
 {
   clr = paste("rgb(", paste(col2rgb(colores[j]), collapse = ","), ")", collapse = "")
   xml$addTag(
@@ -179,8 +165,8 @@ xml$closeTag()
 
 ##### Draw contigs
 
-contigs = finalTable %>% group_by(rID) %>% summarise(position = first(position) +1)
-
+contigs = finalTable %>% group_by(rID) %>% summarise(position = first(position) +
+                                                       1)
 lblBoolean = !(exists("annot"))
 
 if (nrow(contigs) > 1)
