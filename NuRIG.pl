@@ -66,7 +66,7 @@ if($annot)
 }
 $R->set('listFile',$table);
 
-$R->set('palette',$palette);
+$R->set('palette_color',$palette);
 
 $R->run_from_file("$PATH/lib/NuRIG.R");
 $R-> stop();

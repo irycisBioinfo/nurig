@@ -3,20 +3,23 @@ library(tidyr)
 library(XML)
 
 #setwd("~/ST117/Paper/data/ST117/")
- #listFile = "list"
+ #listFile = "list2"
  #annotFile = "annot.tab"
  #ref = "CP018065.1EnterococcusfaeciumstrainE1,completegenome.fasta"
  #ref = "GCA_001562905.1_ASM156290v1_genomic.fna"
- #outFile = "out.xml"
+ outFile = "out.xml"
 
 lista = read.table(listFile, sep = "\t")
 #colnames(lista) = c("file")
 
 if(exists("annotFile"))
 {
-  annot = read.table(annotFile, sep = "\t", stringsAsFactors = FALSE)
+  annot = read.delim(annotFile,sep = "\t", quote = "",stringsAsFactors = FALSE, header =FALSE)
 }
-palette = 'rainbow'
+if(!exists("palette_color"))
+{
+	palette_color = 'rainbow'
+}
 
 if (ncol(lista) == 2)
 {
@@ -109,13 +112,17 @@ xml$addTag(
 
 j = 1
 
-if (palette == 'rainbow')
+if (palette_color == 'rainbow')
 {
   colores = rainbow(max(finalTable$slot))
-} else if (palette == 'topo') {
-  colores = topo.colores(max(finalTable$slot))
-} else if (palette == 'terrain') {
+} else if (palette_color == 'topo') {
+  colores = topo.colors(max(finalTable$slot))
+} else if (palette_color == 'terrain') {
   colores = terrain.colors(max(finalTable$slot))
+} else if (palette_color == 'distinct'){
+  colores = randomcoloR::distinctColorpalette_color(max(finalTable$slot))
+} else {
+  colores = colores = rainbow(max(finalTable$slot))
 }
 
 for (tab in 1:max(legend$order))
@@ -210,8 +217,7 @@ if (nrow(contigs) > 1)
   xml$addTag(
     "featureRange",
     attrs = c(
-      start = contigs$position[nrow(contigs)]
-      ,
+      start = contigs$position[nrow(contigs)],
       stop = as.integer(size[1]),
       mouseover = contigs$rID[nrow(contigs)],
       label = contigs$rID[nrow(contigs)],
@@ -225,14 +231,14 @@ if (nrow(contigs) > 1)
 }
 
 ### Draw Annotation
-#if (exists(annot))
+
 if(exists("annot"))
 {
   if(ncol(annot) <6){
     annot$color = "black"
   }
-  colnames(annot) = c("qID","start","end","strand","label","color")
-  finalAnnot = finalTable %>% group_by(qID) %>% summarise(position = first(position)) %>% right_join(., annot) %>%  mutate(start = start +
+  colnames(annot) = c("rID","start","end","strand","label","color")
+  finalAnnot = finalTable %>% group_by(rID) %>% summarise(position = first(position)) %>% left_join(., annot, by ="rID") %>%  mutate(start = start +
                                                                                                                             position, end = end + position)
   
   xml$addTag("featureSlot",
@@ -245,13 +251,24 @@ if(exists("annot"))
   tmp = finalAnnot %>% filter(strand == "+")
   for (i in 1:(nrow(tmp)))
   {
+	  
+		  stop = tmp$end[i]
+		  start = tmp$start[i]
+	    if(stop > max(finalTable$lenref))
+	    {
+	      stop = max(finalTable$lenref)
+	    }
+		  if(start > max(finalTable$lenref))
+		  {
+		    start = max(finalTable$lenref)
+		  }
     xml$addTag(
       "featureRange",
       attrs = c(
-        start = tmp$start[i],
-        stop = tmp$end[i],
+        start = start,
+        stop = stop,
         color = tmp$color[i],
-        label = tmp$label,
+        label = tmp$label[i],
         showLabel = "TRUE"
       ),
       close = TRUE
@@ -268,11 +285,22 @@ if(exists("annot"))
   tmp = finalAnnot %>% filter(strand == "-")
   for (i in 1:(nrow(tmp)))
   {
+    
+    stop = tmp$end[i]
+    start = tmp$start[i]
+    if(stop > max(finalTable$lenref))
+    {
+      stop = max(finalTable$lenref)
+    }
+    if(start > max(finalTable$lenref))
+    {
+      start = max(finalTable$lenref)
+    }
     xml$addTag(
       "featureRange",
       attrs = c(
-        start = tmp$start[i],
-        stop = tmp$end[i],
+        start = start,
+        stop = stop,
         color = tmp$color[i],
         label = tmp$label[i],
         showLabel = "TRUE"

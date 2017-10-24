@@ -76,7 +76,7 @@ foreach $l (@gff)
 				}
 			}
 		}
-		print "$c[0]\t$c[3]\t$c[4]\t$c[6]\t$label\n";
+		print OUT "$c[0]\t$c[3]\t$c[4]\t$c[6]\t$label\n";
 	}
 }
 
