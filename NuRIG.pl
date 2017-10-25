@@ -25,7 +25,7 @@ my @Options;
 		{OPT=>"out=s",	VAR=>\$outFile,	DEFAULT => 'out', DESC=>"Image- filename"},
 		{OPT=>"list=s",	VAR=>\$table, DESC=>"list with query genome files"},
 		{OPT=>"annot=s", VAR=>\$annot, DESC=>"Annotation file"},
-		{OPT=>"palette=s",	VAR=>\$palette,	DEFAULT => 'rainbow', DESC=>"Color palette for figure (rainbow, topo, terrain)"},
+		{OPT=>"palette=s",	VAR=>\$palette,	DEFAULT => 'rainbow', DESC=>"Color palette for figure (rainbow, topo, terrain, distinc (Requires randomcolorR package)"},
 		{OPT=>"W=i",	VAR=>\$W,	DEFAULT => '1000', DESC=>"Image weight"},
 		{OPT=>"H=i",	VAR=>\$H,	DEFAULT => '1000', DESC=>"Image height"},
 		{OPT=>"format=s",	VAR=>\$format,	DEFAULT => 'SVG', DESC=>"Output format image (JPG,PNG,SVG,SVGZ)"}
@@ -77,7 +77,7 @@ system("java -jar $PATH/bin/cgview/cgview.jar -i out.xml -o $outFile.$format -f 
 
 sub usage {
 	print "Usage:\n\n";
-	print "Nucmer Image Ring Generator (NuRIG) BETA-Version\n";
+	print "Nucmer Ring Image Generator (NuRIG) BETA-Version\n";
 	print "writen by: Val F. Lanza (valfernandez.vf\@gmail.com)\n\n";
 	print "NuRIG.pl --ref reference.fasta --list list.txt --annot AnnotationFile.tab --out image.svg --palette rainbow --W 1000 --H 1000 --format SVG\n";
 
