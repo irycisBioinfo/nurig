@@ -2,9 +2,9 @@ library(dplyr)
 library(tidyr)
 library(XML)
 
- setwd("~/ST117/Paper/data/ST117/")
- listFile = "list"
- annotFile = "annot.tab"
+ #setwd("~/ST117/Paper/data/ST117/")
+ #listFile = "list"
+ #annotFile = "annot.tab"
  #ref = "CP018065.1EnterococcusfaeciumstrainE1,completegenome.fasta"
 # ref = "CP018069.1EnterococcusfaeciumstrainE1plasmidpE1_3,completesequence.fasta"
 # palette_color = "distinct"
