@@ -81,5 +81,17 @@ foreach $l (@gff)
 }
 
 sub usage(){
-	print "\n\nGFF to Annot file\n";
+	print "Usage:\n\n";
+	print "Gff2annot\n";
+	print "writen by: Val F. Lanza (valfernandez.vf\@gmail.com)\n\n";
+	
+	print "\nParameters:\n\n";
+	foreach (@Options) {
+		
+		printf "  --%-13s %s%s.\n",$_->{OPT},$_->{DESC},
+			defined($_->{DEFAULT}) ? " (default '$_->{DEFAULT}')" : "";
+	}
+	print "\n\n\n";
+	exit(1);
+	
 }
